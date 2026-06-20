@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>4000 Essential English Words</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+  min-height: 100vh; min-height: 100dvh;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.container { width: 100%; max-width: 440px; padding: 16px; }
+
+/* 選擇頁 */
+.selector { text-align: center; color: white; }
+.selector h1 { font-size: 22px; margin-bottom: 6px; }
+.selector .sub { color: rgba(255,255,255,0.5); font-size: 13px; margin-bottom: 20px; }
+.book-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 16px; }
+.book-btn {
+  width: 60px; height: 60px; border-radius: 16px;
+  border: 2px solid rgba(10,189,227,0.3);
+  background: rgba(255,255,255,0.06);
+  color: #0abde3; font-size: 18px; font-weight: bold;
+  cursor: pointer; transition: all 0.3s;
+}
+.book-btn:hover, .book-btn.active {
+  background: rgba(10,189,227,0.15); border-color: #0abde3;
+  box-shadow: 0 0 20px rgba(10,189,227,0.3);
+}
+.unit-select {
+  padding: 10px 16px; border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.06); color: white;
+  font-size: 15px; width: 100%; max-width: 280px;
+  cursor: pointer; outline: none; margin-bottom: 16px;
+}
+.unit-select option { background: #1a1a2e; color: white; }
+.start-btn {
+  display: block; margin: 0 auto; padding: 14px 48px;
+  border-radius: 30px; border: none;
+  background: linear-gradient(135deg, #0abde3, #0984e3);
+  color: white; font-size: 17px; font-weight: 600;
+  cursor: pointer; transition: all 0.3s;
+  box-shadow: 0 4px 20px rgba(10,189,227,0.3);
+}
+.start-btn:active { transform: scale(0.95); }
+.start-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.word-count { color: rgba(255,255,255,0.4); font-size: 13px; margin-top: 8px; }
+
+/* 卡片區 */
+.study-view { display: none; }
+.top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.back-btn {
+  background: rgba(255,255,255,0.08); border: none; color: white;
+  padding: 8px 16px; border-radius: 20px; font-size: 14px; cursor: pointer;
+}
+.info { color: rgba(255,255,255,0.5); font-size: 13px; text-align: right; }
+.progress-wrap { display: flex; gap: 4px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+.dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(255,255,255,0.15); transition: all 0.4s;
+}
+.dot.active { background: #0abde3; box-shadow: 0 0 8px #0abde3; transform: scale(1.5); }
+.dot.known { background: #27ae6060; }
+.dot.unknown { background: #e74c3c60; }
+
+/* 翻轉卡片 */
+.flip { perspective: 1200px; width: 100%; height: 440px; margin-bottom: 16px; }
+.flip-inner {
+  position: relative; width: 100%; height: 100%;
+  transition: transform 0.6s cubic-bezier(0.4,0,0.2,1);
+  transform-style: preserve-3d;
+}
+.flip-inner.revealed { transform: rotateY(180deg); }
+.face {
+  position: absolute; width: 100%; height: 100%;
+  backface-visibility: hidden; border-radius: 24px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 24px;
+}
+.front {
+  background: linear-gradient(145deg, #1e3a5f, #162447);
+  border: 2px solid rgba(10,189,227,0.3);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+}
+.back {
+  background: linear-gradient(145deg, #1a1a2e, #162447);
+  border: 2px solid rgba(10,189,227,0.2);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  transform: rotateY(180deg);
+}
+.word-display {
+  color: #ecf0f1; font-size: 36px; font-weight: 700;
+  letter-spacing: 1px; margin-bottom: 12px; text-align: center;
+}
+.phonetic { color: #0abde3; font-size: 16px; margin-bottom: 20px; text-align: center; }
+.speak-btn {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: linear-gradient(135deg, #0abde3, #0984e3);
+  border: none; color: white; font-size: 30px; cursor: pointer;
+  box-shadow: 0 8px 30px rgba(10,189,227,0.4);
+  animation: pulse 2s infinite; transition: all 0.3s;
+}
+@keyframes pulse {
+  0%,100% { box-shadow: 0 8px 30px rgba(10,189,227,0.4); }
+  50% { box-shadow: 0 8px 50px rgba(10,189,227,0.7); }
+}
+.speak-btn:active { transform: scale(0.9); }
+.speak-btn.speaking { animation: none; box-shadow: 0 0 0 12px rgba(10,189,227,0.3); }
+.hint { color: rgba(255,255,255,0.4); font-size: 13px; margin-top: 20px; }
+
+.back-word { color: #ecf0f1; font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+.back-phonetic { color: #0abde3; font-size: 15px; margin-bottom: 16px; }
+.def-box {
+  background: rgba(255,255,255,0.06); border-radius: 14px;
+  padding: 16px; margin-bottom: 14px; width: 100%;
+}
+.def-label { color: rgba(255,255,255,0.4); font-size: 11px; letter-spacing: 2px; margin-bottom: 6px; }
+.def-text { color: #ecf0f1; font-size: 16px; line-height: 1.6; }
+.zh-box {
+  background: rgba(255,193,7,0.06); border-radius: 14px;
+  padding: 12px; width: 100%; margin-bottom: 10px;
+  border-left: 3px solid #f39c12;
+}
+.zh-label { color: rgba(243,156,18,0.6); font-size: 11px; letter-spacing: 2px; margin-bottom: 4px; }
+.zh-text { color: #f1c40f; font-size: 16px; }
+.example-box {
+  background: rgba(10,189,227,0.08); border-radius: 14px;
+  padding: 14px; width: 100%; border-left: 3px solid #0abde3;
+}
+.example-label { color: rgba(10,189,227,0.6); font-size: 11px; letter-spacing: 2px; margin-bottom: 4px; }
+.example-text { color: #b2bec3; font-size: 14px; line-height: 1.6; font-style: italic; }
+.back-buttons { display: flex; gap: 12px; margin-top: 16px; }
+.know-btn, .dunno-btn {
+  flex: 1; padding: 14px; border-radius: 14px;
+  border: none; font-size: 15px; font-weight: 600; cursor: pointer;
+  transition: all 0.2s;
+}
+.dunno-btn { background: rgba(231,76,60,0.15); color: #e74c3c; }
+.know-btn { background: rgba(39,174,96,0.15); color: #27ae60; }
+.dunno-btn:active { background: rgba(231,76,60,0.3); }
+.know-btn:active { background: rgba(39,174,96,0.3); }
+
+/* 完成畫面 */
+.complete { display: none; text-align: center; color: white; animation: fadeIn 0.5s; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+.complete.show { display: block; }
+.complete-emoji { font-size: 56px; margin-bottom: 12px; }
+.stats { font-size: 15px; margin-bottom: 20px; line-height: 1.8; }
+.stats .green { color: #27ae60; }
+.stats .red { color: #e74c3c; }
+.again-btn {
+  padding: 14px 40px; border-radius: 30px;
+  border: 2px solid #0abde3; background: transparent;
+  color: #0abde3; font-size: 16px; cursor: pointer;
+  margin: 4px; transition: all 0.3s;
+}
+.again-btn:active { background: rgba(10,189,227,0.15); }
+.again-btn.primary { background: #0abde3; color: white; border: none; }
+
+/* 彈窗 */
+.modal { display: none; position: fixed; top:0;left:0;right:0;bottom:0; background: rgba(0,0,0,0.8); z-index:100; align-items:center; justify-content:center; }
+.modal.show { display: flex; }
+.modal-content {
+  background: #162447; border-radius: 20px; padding: 24px;
+  max-width: 360px; width: 90%; text-align: center;
+  border: 1px solid rgba(10,189,227,0.2);
+}
+.modal h3 { color: white; margin-bottom: 12px; }
+.modal p { color: #b2bec3; font-size: 14px; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<div class="container" id="app">
+  <!-- 選擇頁 -->
+  <div class="selector" id="selectorView">
+    <h1>📚 4000 Essential English Words</h1>
+    <div class="sub">選一本書開始練習</div>
+    <div class="book-grid" id="bookGrid"></div>
+    <select class="unit-select" id="unitSelect"><option value="">-- 選單元 --</option></select>
+    <div class="word-count" id="wordCount"></div>
+    <button class="start-btn" id="startBtn" disabled onclick="startStudy()">開始練習 ▶</button>
+  </div>
+
+  <!-- 學習頁 -->
+  <div class="study-view" id="studyView">
+    <div class="top-bar">
+      <button class="back-btn" onclick="goBack()">← 回選單</button>
+      <div class="info" id="studyInfo"></div>
+    </div>
+    <div class="progress-wrap" id="dots"></div>
+    <div class="flip" id="flip" onclick="flipCard()">
+      <div class="flip-inner" id="flipInner">
+        <div class="face front">
+          <div class="word-display" id="frontWord"></div>
+          <div class="phonetic" id="frontPhonetic"></div>
+          <button class="speak-btn" id="speakBtn" onclick="event.stopPropagation(); speak()">🔊</button>
+          <div class="hint">點卡片看答案</div>
+        </div>
+        <div class="face back" onclick="event.stopPropagation(); flipCard()">
+          <div class="back-word" id="backWord"></div>
+          <div class="back-phonetic" id="backPhonetic"></div>
+          <div class="def-box">
+            <div class="def-label">定義</div>
+            <div class="def-text" id="defText"></div>
+          </div>
+          <div class="zh-box" id="zhBox" style="display:none">
+            <div class="zh-label">中文</div>
+            <div class="zh-text" id="zhText"></div>
+          </div>
+          <div class="example-box" id="exampleBox" style="display:none">
+            <div class="example-label">例句</div>
+            <div class="example-text" id="exampleText"></div>
+          </div>
+          <div class="back-buttons">
+            <button class="dunno-btn" onclick="event.stopPropagation(); answer(false)">😣 不熟</button>
+            <button class="know-btn" onclick="event.stopPropagation(); answer(true)">😊 會了</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 完成頁 -->
+  <div class="complete" id="completeView">
+    <div class="complete-emoji" id="completeEmoji">🎉</div>
+    <div class="stats" id="statsText"></div>
+    <button class="again-btn" onclick="goBack()">📖 回選單</button>
+    <button class="again-btn primary" onclick="startStudy()">🔄 再來一次</button>
+  </div>
+</div>
+
+<script>
+let allData = [];
+let currentBook = null;
+let currentUnit = null;
+let cards = [];
+let currentIdx = 0;
+let known = 0;
+let unknown = 0;
+
+async function init() {
+  try {
+    const res = await fetch('data/words.json');
+    allData = await res.json();
+    renderBooks();
+  } catch(e) { alert('載入資料失敗'); }
+}
+
+function renderBooks() {
+  const grid = document.getElementById('bookGrid');
+  grid.innerHTML = allData.map((b,i) =>
+    `<button class="book-btn" data-idx="${i}" onclick="selectBook(${i},this)">${b.id}</button>`
+  ).join('');
+}
+
+function selectBook(idx, btn) {
+  currentBook = idx;
+  document.querySelectorAll('.book-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  
+  const sel = document.getElementById('unitSelect');
+  sel.innerHTML = '<option value="">-- 選單元 --</option>' +
+    allData[idx].units.map((u,i) =>
+      `<option value="${i}">${u.name} (${u.words.length} 字)</option>`
+    ).join('');
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('wordCount').textContent = '';
+}
+
+document.getElementById('unitSelect').addEventListener('change', function() {
+  if (this.value !== '' && currentBook !== null) {
+    const unit = allData[currentBook].units[parseInt(this.value)];
+    document.getElementById('wordCount').textContent = `共 ${unit.words.length} 個單字`;
+    document.getElementById('startBtn').disabled = false;
+  } else {
+    document.getElementById('startBtn').disabled = true;
+  }
+});
+
+function startStudy() {
+  currentUnit = parseInt(document.getElementById('unitSelect').value);
+  const unit = allData[currentBook].units[currentUnit];
+  cards = [...unit.words];
+  // 隨機排序
+  for (let i = cards.length-1; i>0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [cards[i], cards[j]] = [cards[j], cards[i]];
+  }
+  currentIdx = 0;
+  known = 0;
+  unknown = 0;
+  
+  document.getElementById('selectorView').style.display = 'none';
+  document.getElementById('completeView').classList.remove('show');
+  document.getElementById('completeView').style.display = 'none';
+  document.getElementById('studyView').style.display = 'block';
+  
+  document.getElementById('studyInfo').textContent =
+    `Book ${allData[currentBook].id} · ${unit.name}`;
+  
+  renderDots();
+  showCard();
+}
+
+function renderDots() {
+  const dots = document.getElementById('dots');
+  dots.innerHTML = cards.map((_,i) =>
+    `<div class="dot" id="dot${i}"></div>`
+  ).join('');
+}
+
+function showCard() {
+  const card = cards[currentIdx];
+  document.getElementById('flipInner').classList.remove('revealed');
+  document.getElementById('frontWord').textContent = card.w;
+  document.getElementById('frontPhonetic').textContent = card.p || '';
+  document.getElementById('backWord').textContent = card.w;
+  document.getElementById('backPhonetic').textContent = card.p || '';
+  document.getElementById('defText').textContent = card.d || '';
+  
+  if (card.zh) {
+    document.getElementById('zhBox').style.display = 'block';
+    document.getElementById('zhText').textContent = card.zh;
+  } else {
+    document.getElementById('zhBox').style.display = 'none';
+  }
+  
+  if (card.e) {
+    document.getElementById('exampleBox').style.display = 'block';
+    document.getElementById('exampleText').textContent = card.e;
+  } else {
+    document.getElementById('exampleBox').style.display = 'none';
+  }
+  
+  updateDots();
+}
+
+function updateDots() {
+  document.querySelectorAll('.dot').forEach((d,i) => {
+    d.classList.remove('active');
+    if (i === currentIdx) d.classList.add('active');
+  });
+}
+
+function flipCard() {
+  document.getElementById('flipInner').classList.toggle('revealed');
+}
+
+function speak() {
+  if ('speechSynthesis' in window) {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(cards[currentIdx].w);
+    u.lang = 'en-US'; u.rate = 0.85;
+    const btn = document.getElementById('speakBtn');
+    btn.classList.add('speaking');
+    u.onend = () => btn.classList.remove('speaking');
+    speechSynthesis.speak(u);
+  }
+}
+
+function answer(isKnown) {
+  const dot = document.getElementById(`dot${currentIdx}`);
+  if (isKnown) {
+    known++; dot.classList.add('known');
+  } else {
+    unknown++; dot.classList.add('unknown');
+  }
+  
+  currentIdx++;
+  if (currentIdx >= cards.length) {
+    showComplete();
+  } else {
+    showCard();
+  }
+}
+
+function showComplete() {
+  document.getElementById('studyView').style.display = 'none';
+  document.getElementById('completeView').style.display = 'block';
+  document.getElementById('completeView').classList.add('show');
+  
+  const total = cards.length;
+  const pct = Math.round(known/total*100);
+  let emoji = pct >= 90 ? '🏆' : pct >= 70 ? '👍' : pct >= 50 ? '💪' : '📖';
+  document.getElementById('completeEmoji').textContent = emoji;
+  document.getElementById('statsText').innerHTML =
+    `完成 ${total} 個單字！<br>
+    <span class="green">😊 認識：${known} (${pct}%)</span><br>
+    <span class="red">😣 不熟：${unknown}</span>`;
+}
+
+function goBack() {
+  document.getElementById('studyView').style.display = 'none';
+  document.getElementById('completeView').style.display = 'none';
+  document.getElementById('completeView').classList.remove('show');
+  document.getElementById('selectorView').style.display = 'block';
+  document.getElementById('flipInner').classList.remove('revealed');
+}
+
+init();
+</script>
+</body>
+</html>
