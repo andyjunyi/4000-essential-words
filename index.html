@@ -19,26 +19,40 @@ body {
 .selector { text-align: center; color: white; }
 .selector h1 { font-size: 22px; margin-bottom: 6px; }
 .selector .sub { color: rgba(255,255,255,0.5); font-size: 13px; margin-bottom: 20px; }
-.book-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 16px; }
-.book-btn {
-  width: 60px; height: 60px; border-radius: 16px;
-  border: 2px solid rgba(10,189,227,0.3);
-  background: rgba(255,255,255,0.06);
-  color: #0abde3; font-size: 18px; font-weight: bold;
+
+/* 書本卡片 */
+.book-cards { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.book-card {
+  border-radius: 16px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
   cursor: pointer; transition: all 0.3s;
+  text-align: left;
 }
-.book-btn:hover, .book-btn.active {
-  background: rgba(10,189,227,0.15); border-color: #0abde3;
-  box-shadow: 0 0 20px rgba(10,189,227,0.3);
+.book-card.selected { border-color: var(--accent); background: var(--accent-bg); }
+.book-card-header {
+  display: flex; align-items: center; gap: 14px; padding: 16px;
 }
-.unit-select {
-  padding: 10px 16px; border-radius: 12px;
-  border: 2px solid rgba(255,255,255,0.15);
-  background: rgba(255,255,255,0.06); color: white;
-  font-size: 15px; width: 100%; max-width: 280px;
-  cursor: pointer; outline: none; margin-bottom: 16px;
+.book-card-header .icon { font-size: 36px; }
+.book-card-header .info { flex: 1; }
+.book-card-header .book-name { font-size: 18px; font-weight: 700; color: white; }
+.book-card-header .book-meta { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+.book-card-header .arrow { color: rgba(255,255,255,0.25); font-size: 14px; transition: transform 0.3s; }
+.book-card.open .book-card-header .arrow { transform: rotate(90deg); }
+
+/* 單元列表 */
+.unit-list { display: none; padding: 0 16px 14px 16px; }
+.book-card.open .unit-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.unit-chip {
+  padding: 8px 14px; border-radius: 20px; font-size: 13px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.7);
+  cursor: pointer; transition: all 0.2s;
 }
-.unit-select option { background: #1a1a2e; color: white; }
+.unit-chip:hover { background: rgba(255,255,255,0.1); }
+.unit-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+.start-btn-wrap { margin-top: 8px; }
 .start-btn {
   display: block; margin: 0 auto; padding: 14px 48px;
   border-radius: 30px; border: none;
@@ -49,7 +63,6 @@ body {
 }
 .start-btn:active { transform: scale(0.95); }
 .start-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.word-count { color: rgba(255,255,255,0.4); font-size: 13px; margin-top: 8px; }
 
 /* 卡片區 */
 .study-view { display: none; }
@@ -186,10 +199,10 @@ body {
   <div class="selector" id="selectorView">
     <h1>📚 4000 Essential English Words</h1>
     <div class="sub">選一本書開始練習</div>
-    <div class="book-grid" id="bookGrid"></div>
-    <select class="unit-select" id="unitSelect"><option value="">-- 選單元 --</option></select>
-    <div class="word-count" id="wordCount"></div>
-    <button class="start-btn" id="startBtn" disabled onclick="startStudy()">開始練習 ▶</button>
+    <div class="book-cards" id="bookCards"></div>
+    <div class="start-btn-wrap">
+      <button class="start-btn" id="startBtn" disabled onclick="startStudy()">開始練習 ▶</button>
+    </div>
   </div>
 
   <!-- 學習頁 -->
@@ -262,39 +275,56 @@ async function init() {
   } catch(e) { alert('載入資料失敗'); }
 }
 
+const BOOK_COLORS = ['#0abde3','#27ae60','#f39c12','#9b59b6','#e84393','#00cec9'];
+const BOOK_ICONS   = ['📘','📗','📙','📕','📒','📓'];
+
 function renderBooks() {
-  const grid = document.getElementById('bookGrid');
-  grid.innerHTML = allData.map((b,i) =>
-    `<button class="book-btn" data-idx="${i}" onclick="selectBook(${i},this)">${b.id}</button>`
-  ).join('');
+  const wrap = document.getElementById('bookCards');
+  wrap.innerHTML = allData.map((b,i) => {
+    const total = b.units.reduce((s,u) => s + u.words.length, 0);
+    return `<div class="book-card" id="book${i}" style="--accent:${BOOK_COLORS[i]};--accent-bg:${BOOK_COLORS[i]}15"
+              onclick="toggleBook(${i})">
+      <div class="book-card-header">
+        <span class="icon">${BOOK_ICONS[i]}</span>
+        <div class="info">
+          <div class="book-name">Book ${b.id}</div>
+          <div class="book-meta">${b.units.length} 單元 · ${total} 字</div>
+        </div>
+        <span class="arrow">▶</span>
+      </div>
+      <div class="unit-list">${
+        b.units.map((u,j) =>
+          `<span class="unit-chip" id="chip${i}_${j}" onclick="event.stopPropagation(); pickUnit(${i},${j})">${u.name}</span>`
+        ).join('')
+      }</div>
+    </div>`;
+  }).join('');
 }
 
-function selectBook(idx, btn) {
-  currentBook = idx;
-  document.querySelectorAll('.book-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  
-  const sel = document.getElementById('unitSelect');
-  sel.innerHTML = '<option value="">-- 選單元 --</option>' +
-    allData[idx].units.map((u,i) =>
-      `<option value="${i}">${u.name} (${u.words.length} 字)</option>`
-    ).join('');
-  document.getElementById('startBtn').disabled = true;
-  document.getElementById('wordCount').textContent = '';
+function toggleBook(idx) {
+  const card = document.getElementById('book'+idx);
+  const wasOpen = card.classList.contains('open');
+  // 關閉其他
+  document.querySelectorAll('.book-card').forEach(c => c.classList.remove('open','selected'));
+  if (!wasOpen) card.classList.add('open');
 }
 
-document.getElementById('unitSelect').addEventListener('change', function() {
-  if (this.value !== '' && currentBook !== null) {
-    const unit = allData[currentBook].units[parseInt(this.value)];
-    document.getElementById('wordCount').textContent = `共 ${unit.words.length} 個單字`;
-    document.getElementById('startBtn').disabled = false;
-  } else {
-    document.getElementById('startBtn').disabled = true;
-  }
-});
+function pickUnit(bookIdx, unitIdx) {
+  currentBook = bookIdx;
+  currentUnit = unitIdx;
+  // 清除其他選取
+  document.querySelectorAll('.unit-chip').forEach(c => c.classList.remove('active'));
+  document.getElementById('chip'+bookIdx+'_'+unitIdx).classList.add('active');
+  // 標記書本
+  document.querySelectorAll('.book-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('book'+bookIdx).classList.add('selected');
+  // 啟用開始按鈕
+  document.getElementById('startBtn').disabled = false;
+  document.getElementById('startBtn').textContent =
+    `開始練習 ▶ (${allData[bookIdx].units[unitIdx].words.length} 字)`;
+}
 
 function startStudy() {
-  currentUnit = parseInt(document.getElementById('unitSelect').value);
   const unit = allData[currentBook].units[currentUnit];
   cards = [...unit.words];
   // 隨機排序
@@ -440,6 +470,10 @@ function goBack() {
   document.getElementById('completeView').classList.remove('show');
   document.getElementById('selectorView').style.display = 'block';
   document.getElementById('flipInner').classList.remove('revealed');
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('startBtn').textContent = '開始練習 ▶';
+  document.querySelectorAll('.book-card').forEach(c => c.classList.remove('open','selected'));
+  document.querySelectorAll('.unit-chip').forEach(c => c.classList.remove('active'));
 }
 
 init();
