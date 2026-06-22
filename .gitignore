@@ -1,3 +1,6 @@
 translate.py
+lookup_cambridge.py
+batch_audio.py
+tts_server.py
 __pycache__/
 *.pyc

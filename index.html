@@ -99,20 +99,25 @@ body {
   letter-spacing: 1px; margin-bottom: 12px; text-align: center;
 }
 .phonetic { color: #0abde3; font-size: 16px; margin-bottom: 20px; text-align: center; }
-.speak-btn {
-  width: 72px; height: 72px; border-radius: 50%;
-  background: linear-gradient(135deg, #0abde3, #0984e3);
-  border: none; color: white; font-size: 30px; cursor: pointer;
-  box-shadow: 0 8px 30px rgba(10,189,227,0.4);
-  animation: pulse 2s infinite; transition: all 0.3s;
-}
-@keyframes pulse {
-  0%,100% { box-shadow: 0 8px 30px rgba(10,189,227,0.4); }
-  50% { box-shadow: 0 8px 50px rgba(10,189,227,0.7); }
-}
-.speak-btn:active { transform: scale(0.9); }
-.speak-btn.speaking { animation: none; box-shadow: 0 0 0 12px rgba(10,189,227,0.3); }
 .hint { color: rgba(255,255,255,0.4); font-size: 13px; margin-top: 20px; }
+
+/* 鍵盤提示 */
+.key-hints {
+  display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
+  margin-top: 12px;
+}
+.key-hints .key {
+  color: rgba(255,255,255,0.35); font-size: 12px;
+  display: flex; align-items: center; gap: 4px;
+}
+.key-hints kbd {
+  display: inline-block; min-width: 24px; height: 24px;
+  line-height: 24px; text-align: center;
+  border-radius: 5px; border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.5); font-size: 12px;
+  font-family: inherit; padding: 0 5px;
+}
 
 .back-word { color: #ecf0f1; font-size: 32px; font-weight: 700; margin-bottom: 8px; }
 .back-phonetic { color: #0abde3; font-size: 15px; margin-bottom: 16px; }
@@ -199,7 +204,6 @@ body {
         <div class="face front">
           <div class="word-display" id="frontWord"></div>
           <div class="phonetic" id="frontPhonetic"></div>
-          <button class="speak-btn" id="speakBtn" onclick="event.stopPropagation(); speak()">🔊</button>
           <div class="hint">點卡片看答案</div>
         </div>
         <div class="face back" onclick="event.stopPropagation(); flipCard()">
@@ -223,6 +227,12 @@ body {
           </div>
         </div>
       </div>
+    </div>
+    <div class="key-hints">
+      <span class="key"><kbd>↑</kbd> 發音</span>
+      <span class="key"><kbd>↓</kbd><kbd>Space</kbd> 翻面</span>
+      <span class="key"><kbd>←</kbd> 上一張</span>
+      <span class="key"><kbd>→</kbd> 下一張</span>
     </div>
   </div>
 
@@ -339,6 +349,7 @@ function showCard() {
   }
   
   updateDots();
+  speak();
 }
 
 function updateDots() {
@@ -349,19 +360,33 @@ function updateDots() {
 }
 
 function flipCard() {
-  document.getElementById('flipInner').classList.toggle('revealed');
+  const inner = document.getElementById('flipInner');
+  inner.classList.toggle('revealed');
+  if (!inner.classList.contains('revealed')) speak();  // 翻回正面自動發音
 }
 
-function speak() {
-  if ('speechSynthesis' in window) {
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(cards[currentIdx].w);
-    u.lang = 'en-US'; u.rate = 0.85;
-    const btn = document.getElementById('speakBtn');
-    btn.classList.add('speaking');
-    u.onend = () => btn.classList.remove('speaking');
-    speechSynthesis.speak(u);
-  }
+async function speak() {
+  const word = cards[currentIdx].w;
+  const safe = word.replace(/[^a-zA-Z-]/g, '');
+  const audio = new Audio(`data/audio/${safe}.mp3`);
+  audio.onerror = () => speakFallback(word);
+  audio.play().catch(() => speakFallback(word));
+}
+
+let speaking = false;
+function speakFallback(word) {
+  if (!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(word);
+  u.lang = 'en-US'; u.rate = 0.85;
+  speechSynthesis.speak(u);
+}
+
+function prevCard() {
+  if (currentIdx <= 0) return;
+  // 退回上一張時不計分
+  currentIdx--;
+  showCard();
 }
 
 function answer(isKnown) {
@@ -379,6 +404,20 @@ function answer(isKnown) {
     showCard();
   }
 }
+
+// 鍵盤快捷鍵
+document.addEventListener('keydown', function(e) {
+  if (document.getElementById('studyView').style.display !== 'block') return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  
+  switch (e.key) {
+    case 'ArrowUp':    e.preventDefault(); speak(); break;
+    case 'ArrowDown':  e.preventDefault(); flipCard(); break;
+    case ' ':          e.preventDefault(); flipCard(); break;
+    case 'ArrowRight': e.preventDefault(); answer(true); break;
+    case 'ArrowLeft':  e.preventDefault(); prevCard(); break;
+  }
+});
 
 function showComplete() {
   document.getElementById('studyView').style.display = 'none';
